@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consent Evidence — Certinal Prototype</title>
+<style>
+  :root{
+    --navy:#0f2a3d; --teal:#0d6e6e; --teal-light:#e6f4f3; --paper:#faf8f3; --ink:#16232b;
+    --muted:#5c6b73; --line:#dfe4e2; --amber:#b5772f; --amber-bg:#fbeee0; --red:#a4302b;
+    --red-bg:#fbe9e7; --green:#2f6d4f; --green-bg:#e8f3ec; --radius:14px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);}
+  header.top{background:var(--navy);color:#fff;padding:18px 24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}
+  header.top h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header.top .sub{font-size:12.5px;color:#b7c8ce;margin-top:2px;}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .segmented{display:inline-flex;background:rgba(255,255,255,.08);border-radius:999px;padding:3px;}
+  .segmented button{border:none;background:transparent;color:#cfe0e4;padding:7px 16px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;}
+  .segmented button.active{background:#fff;color:var(--navy);}
+  .segmented button:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+  main{max-width:1280px;margin:0 auto;padding:24px;}
+  .metric-bar{background:var(--teal-light);border:1px solid #bfe1de;border-radius:var(--radius);padding:12px 18px;margin-bottom:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .metric-bar .tag{background:var(--teal);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;}
+  .metric-bar .txt{font-size:13.5px;color:#0c3d3d;}
+  .metric-bar b{color:var(--navy);}
+  .layout{display:grid;grid-template-columns:280px 340px 1fr;gap:22px;align-items:start;}
+  @media (max-width: 980px){ .layout{grid-template-columns:1fr;} }
+  .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .panel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+  .anno-block{margin-bottom:14px;}
+  .anno-block .lbl{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+  .anno-block p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink);}
+  .phone-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .phone{width:340px;max-width:100%;height:660px;background:#fff;border:10px solid var(--navy);border-radius:38px;box-shadow:0 16px 40px rgba(15,42,61,.18);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+  .phone-notch{height:20px;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .phone-notch::before{content:"";width:60px;height:5px;background:#22475f;border-radius:4px;}
+  .screen{flex:1;overflow-y:auto;padding:20px 18px;display:none;flex-direction:column;gap:14px;}
+  .screen.active{display:flex;}
+  .screen h2{margin:0;font-size:18px;color:var(--navy);transition:font-size .15s;}
+  .screen p.lead{margin:0;font-size:13.5px;color:var(--muted);line-height:1.5;transition:font-size .15s;}
+  .dots{display:flex;gap:6px;justify-content:center;padding:10px 0;flex-shrink:0;}
+  .dots span{width:7px;height:7px;border-radius:50%;background:var(--line);}
+  .dots span.on{background:var(--teal);}
+  .nav-row{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line);flex-shrink:0;}
+  .btn{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink);transition:font-size .15s;}
+  .btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .btn:focus-visible, .toggle:focus-visible, .chip:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .card.required{background:#f4f6f5;border-color:#d7ddda;}
+  .card.optional{background:var(--amber-bg);border-color:#eadbc2;}
+  .card .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card h4{margin:0 0 4px;font-size:14.5px;transition:font-size .15s;}
+  .card p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45;transition:font-size .15s;}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;transition:font-size .15s;}
+  .badge.req{background:#dfe6e3;color:#3c4a44;}
+  .toggle{position:relative;width:42px;height:24px;border-radius:999px;background:#d9d3c4;border:none;cursor:pointer;flex-shrink:0;}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .15s;}
+  .toggle.on{background:var(--teal);}
+  .toggle.on::after{left:20px;}
+  .lang-row{display:flex;gap:8px;}
+  .chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer;font-weight:600;transition:font-size .15s;}
+  .chip.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .otp-input{display:flex;gap:8px;}
+  .otp-input input{width:38px;height:44px;text-align:center;font-size:18px;border:1px solid var(--line);border-radius:8px;transition:font-size .15s, width .15s, height .15s;}
+  .sign-pad{border:2px dashed #b9c6c9;border-radius:10px;height:110px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;cursor:pointer;background:#f7faf9;transition:font-size .15s;}
+  .sign-pad.signed{border-style:solid;border-color:var(--teal);color:var(--navy);font-family:cursive;font-size:22px;background:#fff;}
+  .receipt-list{display:flex;flex-direction:column;gap:8px;}
+  .receipt-item{display:flex;justify-content:space-between;font-size:13.5px;padding:8px 0;border-bottom:1px solid var(--line);transition:font-size .15s;}
+  .status-yes{color:var(--green);font-weight:700;}
+  .status-no{color:var(--muted);font-weight:700;}
+  .legacy-doc{font-size:11.5px;line-height:1.5;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;background:#fdfcf9;max-height:260px;overflow-y:auto;transition:font-size .15s;}
+  .legacy-doc p{margin:0 0 8px;}
+  .ledger{display:flex;flex-direction:column;gap:0;}
+  .ledger-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);animation:fadeIn .4s ease;}
+  .ledger-item:last-child{border-bottom:none;}
+  .ledger-dot{width:9px;height:9px;border-radius:50%;background:var(--teal);margin-top:5px;flex-shrink:0;}
+  .ledger-dot.weak{background:#c9b7a0;}
+  .ledger-txt .t{font-size:11px;color:var(--muted);}
+  .ledger-txt .d{font-size:13px;color:var(--ink);font-weight:600;}
+  .ledger-empty{font-size:13px;color:var(--muted);font-style:italic;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .ledger-note{margin-top:12px;padding:10px;background:var(--teal-light);border-radius:8px;font-size:12px;color:#0c3d3d;line-height:1.5;}
+  .ledger-note.weak{background:var(--red-bg);color:#6e2420;}
+  .console{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .console h2{margin:0 0 4px;font-size:19px;color:var(--navy);}
+  .console .meta{font-size:12.5px;color:var(--muted);margin-bottom:18px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:760px){.grid2{grid-template-columns:1fr;}}
+  .cbox{border:1px solid var(--line);border-radius:10px;padding:14px;}
+  .cbox h4{margin:0 0 10px;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
+  table.state{width:100%;border-collapse:collapse;font-size:13px;}
+  table.state td{padding:6px 4px;border-bottom:1px solid var(--line);}
+  .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .pill.complete{background:var(--green-bg);color:var(--green);}
+  .pill.pending{background:var(--amber-bg);color:var(--amber);}
+  .pill.exception{background:var(--red-bg);color:var(--red);}
+  .pill.withdrawn{background:#eee;color:var(--muted);}
+  .legacy-banner{background:var(--red-bg);border:1px solid #edc6c1;color:#6e2420;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;line-height:1.5;}
+  .retry-log{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:18px;}
+  footer.note{max-width:1280px;margin:0 auto;padding:0 24px 40px;font-size:12px;color:var(--muted);line-height:1.6;}
+  .confirm-box{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--green-bg);border:1px solid #cfe6da;border-radius:10px;}
+  .confirm-box h3{margin:0;font-size:15px;color:var(--green);}
+  .confirm-box p{margin:0;font-size:12.5px;color:#3c5a4c;line-height:1.5;}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;max-width:90%;text-align:center;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* Large text mode — scales the whole patient screen up, not just one line */
+  .phone.large-text h2{font-size:23px;}
+  .phone.large-text p.lead{font-size:16.5px;line-height:1.6;}
+  .phone.large-text .card h4{font-size:17.5px;}
+  .phone.large-text .card p{font-size:15px;line-height:1.55;}
+  .phone.large-text .badge{font-size:12.5px;padding:4px 10px;}
+  .phone.large-text .receipt-item{font-size:16px;padding:10px 0;}
+  .phone.large-text .legacy-doc{font-size:14px;}
+  .phone.large-text .btn{font-size:16.5px;padding:14px;}
+  .phone.large-text .chip{font-size:15.5px;padding:10px 16px;}
+  .phone.large-text .sign-pad{font-size:15px;height:120px;}
+  .phone.large-text .otp-input input{width:46px;height:52px;font-size:22px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Consent Evidence — Certinal e-Consent</h1>
+    <div class="sub">Purpose-aware patient consent with compliance evidence and EHR writeback</div>
+  </div>
+  <div class="controls">
+    <div class="segmented" role="tablist" aria-label="Flow version">
+      <button id="btnBefore" class="active" onclick="setFlow('before')">Before</button>
+      <button id="btnImproved" onclick="setFlow('improved')">Improved</button>
+    </div>
+    <div class="segmented" role="tablist" aria-label="View">
+      <button id="btnPatient" class="active" onclick="setView('patient')">Patient view</button>
+      <button id="btnConsole" onclick="setView('console')">Compliance console</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="metric-bar" id="metricBar"></div>
+
+  <div class="layout" id="patientLayout">
+    <div class="panel" id="annoPanel">
+      <h3>Design annotation</h3>
+      <div id="annoContent"></div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone" id="phoneFrame">
+        <div class="phone-notch"></div>
+
+        <div class="screen before-screen" id="scr-before-1">
+          <div id="beforeForm">
+            <h2>Patient Consent Form</h2>
+            <p class="lead">City Care Multispecialty Hospital · OPD Registration</p>
+            <div class="legacy-doc">
+              <p><strong>CONSENT TO TREATMENT AND DATA USE</strong></p>
+              <p>I hereby consent to examination and treatment by the physicians of City Care Multispecialty Hospital. I authorise the hospital to share my medical records with any insurance company, third party administrator, or affiliated laboratory as required. I agree to be contacted by the hospital and its partners regarding appointments, billing, health camps, and promotional offers. I confirm I have read the hospital's terms, privacy notice, and data usage policy in full.</p>
+              <p>This form covers treatment authorisation, data sharing for insurance and diagnostics, and marketing communication under a single signature.</p>
+            </div>
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;">
+              <input type="checkbox" id="beforeAgree" style="margin-top:3px;">
+              <span>I have read and agree to everything above.</span>
+            </label>
+            <div class="sign-pad" id="beforeSignPad" tabindex="0" onclick="signBefore()" onkeypress="if(event.key==='Enter')signBefore()">Tap to sign</div>
+          </div>
+          <div id="beforeConfirm" class="confirm-box" style="display:none;">
+            <h3>Form submitted</h3>
+            <p>Filed to the hospital record system manually by front-desk staff. No purpose-level choice, notice version, or identity method was captured for this session — this screen is all the Before flow ever produces.</p>
+          </div>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-1">
+          <h2 id="txt-w-title"></h2>
+          <p class="lead" id="txt-w-lead"></p>
+          <div class="lang-row">
+            <button class="chip on" id="chipEN" onclick="setLang('en')">English</button>
+            <button class="chip" id="chipHI" onclick="setLang('hi')">हिंदी</button>
+          </div>
+          <div class="card required">
+            <div class="row"><h4 style="margin:0;" id="txt-w-access-title"></h4>
+            <button class="toggle" id="accessToggle" onclick="toggleLargeText(this)"></button></div>
+            <p id="txt-w-access-desc"></p>
+          </div>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-2">
+          <h2 id="txt-p-title"></h2>
+          <p class="lead" id="txt-p-lead"></p>
+          <div class="card required">
+            <div class="row">
+              <h4 id="txt-p-req-title"></h4>
+              <span class="badge req" id="txt-p-req-badge"></span>
+            </div>
+            <p id="txt-p-req-desc"></p>
+          </div>
+          <div class="card optional">
+            <div class="row">
+              <h4 id="txt-p-tpa-title"></h4>
+              <button class="toggle" id="toggleTPA" onclick="toggleOpt(this,'tpa')"></button>
+            </div>
+            <p id="txt-p-tpa-desc"></p>
+          </div>
+          <div class="card optional">
+            <div class="row">
+              <h4 id="txt-p-sms-title"></h4>
+              <button class="toggle" id="toggleSMS" onclick="toggleOpt(this,'sms')"></button>
+            </div>
+            <p id="txt-p-sms-desc"></p>
+          </div>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-3">
+          <h2 id="txt-r-title"></h2>
+          <p class="lead" id="txt-r-lead"></p>
+          <div class="receipt-list" id="reviewList"></div>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-4">
+          <h2 id="txt-i-title"></h2>
+          <p class="lead" id="txt-i-lead"></p>
+          <div class="otp-input">
+            <input maxlength="1" value="4"><input maxlength="1" value="8"><input maxlength="1" value="1"><input maxlength="1" value="9">
+          </div>
+          <button class="btn" style="width:fit-content;padding:8px 12px;font-size:12.5px;" onclick="useFallback()" id="txt-i-fallback"></button>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-5">
+          <h2 id="txt-s-title"></h2>
+          <p class="lead" id="txt-s-lead"></p>
+          <div class="sign-pad" id="signPad" tabindex="0" onclick="signPatient()" onkeypress="if(event.key==='Enter')signPatient()"></div>
+        </div>
+
+        <div class="screen improved-screen" id="scr-imp-6">
+          <h2 id="txt-f-title"></h2>
+          <p class="lead" id="txt-f-lead"></p>
+          <div class="receipt-list" id="finalReceipt"></div>
+          <button class="btn" onclick="downloadCopy()" id="txt-f-download"></button>
+          <button class="btn" onclick="goManageConsent()" id="txt-f-manage"></button>
+        </div>
+
+        <div class="dots" id="dots"></div>
+        <div class="nav-row" id="navRow"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="ledgerPanel">
+      <h3>What's being recorded behind the screen</h3>
+      <div class="ledger" id="ledgerList"><div class="ledger-empty">Nothing yet.</div></div>
+      <div class="ledger-note" id="ledgerNote"></div>
+    </div>
+  </div>
+
+  <div class="console" id="consoleView" style="display:none;">
+    <div id="consoleImproved">
+      <h2>Consent Detail — OPD-2026-091433</h2>
+      <div class="meta">Patient ID ****482 · Dr. Mehra, Cardiology · Session started 09:41 IST</div>
+      <div class="grid2">
+        <div class="cbox">
+          <h4>Purpose states</h4>
+          <table class="state">
+            <tr><td>Treatment and care coordination</td><td><span class="pill complete">Required · Accepted</span></td></tr>
+            <tr><td>Share with insurance TPA</td><td id="tpaState"><span class="pill withdrawn">Declined</span></td></tr>
+            <tr><td>Appointment reminders</td><td id="smsState"><span class="pill withdrawn">Declined</span></td></tr>
+          </table>
+        </div>
+        <div class="cbox">
+          <h4>Signature and identity</h4>
+          <table class="state">
+            <tr><td>Signer role</td><td>Patient (self)</td></tr>
+            <tr><td>Identity method</td><td>OTP · 1 attempt · Verified</td></tr>
+            <tr><td>Notice version shown</td><td id="consoleNoticeVer">v2.3 · English</td></tr>
+            <tr><td>Signed at</td><td id="consoleSignedAt">—</td></tr>
+          </table>
+        </div>
+        <div class="cbox">
+          <h4>Integrity panel <span style="font-weight:400;color:var(--muted);text-transform:none;">(staff only)</span></h4>
+          <table class="state">
+            <tr><td>Artefact hash</td><td>Verified — matches sealed version</td></tr>
+            <tr><td>Algorithm</td><td>SHA-256</td></tr>
+            <tr><td>Bound to</td><td>Notice v2.3, purpose choices, signer role, identity result</td></tr>
+          </table>
+        </div>
+        <div class="cbox">
+          <h4>EHR delivery</h4>
+          <table class="state">
+            <tr><td>Destination</td><td>OpenEMR — City Care</td></tr>
+            <tr><td>Status</td><td id="ehrPill"><span class="pill exception">DELIVERY_EXCEPTION</span></td></tr>
+            <tr><td>Attempts</td><td id="ehrAttempts">1</td></tr>
+          </table>
+          <button class="btn primary" style="margin-top:8px;" onclick="retryEHR()" id="retryBtn">Retry delivery (idempotent)</button>
+          <div class="retry-log" id="retryLog"></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:16px;">
+        <div class="cbox">
+          <h4>Evidence timeline</h4>
+          <div class="ledger" id="consoleLedger"><div class="ledger-empty">No events yet — go to Patient view and step through the Improved flow first.</div></div>
+        </div>
+        <div class="cbox">
+          <h4>Withdrawal</h4>
+          <p style="font-size:13px;color:var(--muted);margin-top:0;">Test the withdrawal path for one optional purpose.</p>
+          <button class="btn" onclick="withdrawSMS()" id="withdrawBtn">Withdraw: Appointment reminders</button>
+          <div class="retry-log" id="withdrawLog"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="consoleLegacy" style="display:none;">
+      <div class="legacy-banner">
+        <strong>Legacy record — evidence limited.</strong> One bundled signature was captured on this PDF. The system cannot confirm which language was shown, whether optional items were understood separately from required treatment, what identity check was used beyond front-desk visual verification, or whether the file reached the correct EHR chart automatically.
+      </div>
+      <div class="grid2">
+        <div class="cbox">
+          <h4>What exists</h4>
+          <table class="state">
+            <tr><td>Signed PDF</td><td>Stored, undated version</td></tr>
+            <tr><td>Purpose-level choice</td><td><span class="pill exception">Not captured</span></td></tr>
+            <tr><td>Notice version shown</td><td><span class="pill exception">Unknown</span></td></tr>
+          </table>
+        </div>
+        <div class="cbox">
+          <h4>What an audit cannot answer</h4>
+          <p style="font-size:13px;line-height:1.6;">Did the patient understand treatment was separate from marketing contact? Was the optional data-sharing item ever declined by anyone? Was this filed against the correct encounter? This is the gap the improved flow closes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="note">
+  Prototype for portfolio review. Screens and copy reflect proposed product decisions, not confirmed Certinal product behaviour. No completion-rate uplift is claimed; baselines are unset until an instrumented pilot produces observed data.
+</footer>
+
+<div id="toast"></div>
+
+<script>
+let flow = 'before';
+let view = 'patient';
+let step = 0;
+let lang = 'en';
+let opt = { tpa:false, sms:false };
+let ledgerEvents = [];
+let signedBefore = false;
+let beforeSubmitted = false;
+let signedImproved = false;
+let ehrRetried = false;
+let smsWithdrawn = false;
+let noticeEventPushed = false;
+
+const improvedScreens = ['scr-imp-1','scr-imp-2','scr-imp-3','scr-imp-4','scr-imp-5','scr-imp-6'];
+const beforeScreens = ['scr-before-1'];
+
+const I18N = {
+  en: {
+    wTitle:"City Care Multispecialty Hospital",
+    wLead:"Consent for your OPD visit — Dr. Mehra, Cardiology. Takes about 3 minutes.",
+    accessTitle:"Larger text",
+    accessDesc:"Turn this on if reading is easier with bigger letters.",
+    pTitle:"What we're asking",
+    pLead:"One is needed for your care today. The other two are your choice.",
+    reqTitle:"Treatment and care coordination",
+    reqBadge:"Required",
+    reqDesc:"Needed so Dr. Mehra and hospital staff can treat you today. This cannot be turned off.",
+    tpaTitle:"Share reports with my insurance TPA",
+    tpaDesc:"Sends your bill and reports to your insurer only if you plan to claim. Off by default.",
+    smsTitle:"Remind me about appointments",
+    smsDesc:"SMS or WhatsApp reminders before your visits. You can turn this off anytime.",
+    rTitle:"Review before you sign",
+    rLead:"Check this is right. You can still go back and change it.",
+    iTitle:"Confirm it's you",
+    iLead:"We sent a 4-digit code to your registered mobile number ending 82.",
+    iFallback:"I don't have my phone — ask staff to help",
+    sTitle:"Your declaration",
+    sLead:"I confirm the choices above are mine. I agree to treatment, and to the optional items I selected.",
+    signTap:"Tap to sign",
+    signed:"Signed",
+    fTitle:"You're done",
+    fLead:"Saved to your hospital record.",
+    fDownload:"Download my copy",
+    fManage:"Manage my optional consent",
+    accepted:"Accepted",
+    declined:"Declined",
+    requiredAccepted:"Required · Accepted",
+    treatmentLabel:"Treatment and care coordination",
+    tpaLabel:"Share with insurance TPA",
+    smsLabel:"Appointment reminders",
+    btnContinue:"Continue",
+    btnBack:"Back",
+    btnFinish:"Finish"
+  },
+  hi: {
+    wTitle:"सिटी केयर मल्टीस्पेशलिटी हॉस्पिटल",
+    wLead:"आपकी ओपीडी विज़िट के लिए सहमति — डॉ. मेहरा, कार्डियोलॉजी। लगभग 3 मिनट लगेंगे।",
+    accessTitle:"बड़ा टेक्स्ट",
+    accessDesc:"पढ़ने में आसानी के लिए इसे चालू करें।",
+    pTitle:"हम क्या पूछ रहे हैं",
+    pLead:"एक चीज़ आज आपके इलाज के लिए ज़रूरी है। बाकी दो आपकी पसंद हैं।",
+    reqTitle:"इलाज और देखभाल समन्वय",
+    reqBadge:"ज़रूरी",
+    reqDesc:"डॉ. मेहरा और स्टाफ को आपका आज इलाज करने के लिए यह ज़रूरी है। इसे बंद नहीं किया जा सकता।",
+    tpaTitle:"मेरी रिपोर्ट बीमा टीपीए के साथ साझा करें",
+    tpaDesc:"अगर आप क्लेम करना चाहते हैं तो आपका बिल और रिपोर्ट बीमा कंपनी को भेजी जाएगी। डिफ़ॉल्ट रूप से बंद।",
+    smsTitle:"अपॉइंटमेंट की याद दिलाएं",
+    smsDesc:"आपकी विज़िट से पहले एसएमएस या व्हाट्सएप रिमाइंडर। आप इसे कभी भी बंद कर सकते हैं।",
+    rTitle:"साइन करने से पहले समीक्षा करें",
+    rLead:"जांच लें कि यह सही है। आप अभी भी वापस जाकर बदल सकते हैं।",
+    iTitle:"पुष्टि करें कि यह आप हैं",
+    iLead:"हमने आपके पंजीकृत मोबाइल नंबर, जो 82 पर समाप्त होता है, पर 4 अंकों का कोड भेजा है।",
+    iFallback:"मेरे पास फोन नहीं है — स्टाफ से मदद मांगें",
+    sTitle:"आपकी घोषणा",
+    sLead:"मैं पुष्टि करता/करती हूं कि ऊपर दी गई पसंद मेरी है। मैं इलाज और अपने चुने गए वैकल्पिक विकल्पों के लिए सहमत हूं।",
+    signTap:"साइन करने के लिए टैप करें",
+    signed:"हस्ताक्षरित",
+    fTitle:"आपका काम पूरा हुआ",
+    fLead:"आपके अस्पताल रिकॉर्ड में सेव कर दिया गया है।",
+    fDownload:"मेरी कॉपी डाउनलोड करें",
+    fManage:"मेरी वैकल्पिक सहमति प्रबंधित करें",
+    accepted:"स्वीकृत",
+    declined:"अस्वीकृत",
+    requiredAccepted:"ज़रूरी · स्वीकृत",
+    treatmentLabel:"इलाज और देखभाल समन्वय",
+    tpaLabel:"बीमा टीपीए के साथ साझा करें",
+    smsLabel:"अपॉइंटमेंट रिमाइंडर",
+    btnContinue:"जारी रखें",
+    btnBack:"पीछे",
+    btnFinish:"समाप्त"
+  }
+};
+
+const annotations = {
+  0: {d:"Single bundled consent.", r:"Front desk needs a fast signature; the hospital needs proof a document exists.", t:"Cannot prove which purposes the patient actually understood or chose. One signature covers treatment, insurance sharing, and marketing together."},
+  1: {d:"Split language and pacing controls into a welcome step, before any choice.", r:"DPDP requires informed consent — a patient reading the wrong language can't give it.", t:"Adds one extra screen versus the old single form, costing a few seconds up front."},
+  2: {d:"Required and optional purposes shown as separate cards, optional items off by default.", r:"Bundled consent hides real choice and fails DPDP's 'specific and unambiguous' bar.", t:"Front desk intake takes longer per patient than a single blanket signature."},
+  3: {d:"Final review screen placed directly before signature, fully editable.", r:"Lets the patient catch a wrong toggle before it becomes a signed record.", t:"One more tap before signing; acceptable for the correction it buys."},
+  4: {d:"Identity check uses a proportionate method (OTP) with a controlled staff fallback.", r:"Signature without identity confidence is not defensible evidence later.", t:"Patients without a working phone need staff help, which must itself be logged."},
+  5: {d:"Declaration text sits directly above the signature action, no separate scroll.", r:"Keeps what was agreed to visible at the moment of commitment.", t:"None of the technical proof (hash, certificate) is shown here by design — it lives in the compliance console only."},
+  6: {d:"Receipt shows plain choices and hospital confirmation, not a record ID or hash.", r:"A patient does not need engineering-log language to trust the outcome.", t:"Patient cannot self-inspect the underlying evidence chain; they can request the full record through the hospital."}
+};
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+
+function applyLang(){
+  const L = I18N[lang];
+  document.getElementById('txt-w-title').textContent = L.wTitle;
+  document.getElementById('txt-w-lead').textContent = L.wLead;
+  document.getElementById('txt-w-access-title').textContent = L.accessTitle;
+  document.getElementById('txt-w-access-desc').textContent = L.accessDesc;
+  document.getElementById('txt-p-title').textContent = L.pTitle;
+  document.getElementById('txt-p-lead').textContent = L.pLead;
+  document.getElementById('txt-p-req-title').textContent = L.reqTitle;
+  document.getElementById('txt-p-req-badge').textContent = L.reqBadge;
+  document.getElementById('txt-p-req-desc').textContent = L.reqDesc;
+  document.getElementById('txt-p-tpa-title').textContent = L.tpaTitle;
+  document.getElementById('txt-p-tpa-desc').textContent = L.tpaDesc;
+  document.getElementById('txt-p-sms-title').textContent = L.smsTitle;
+  document.getElementById('txt-p-sms-desc').textContent = L.smsDesc;
+  document.getElementById('txt-r-title').textContent = L.rTitle;
+  document.getElementById('txt-r-lead').textContent = L.rLead;
+  document.getElementById('txt-i-title').textContent = L.iTitle;
+  document.getElementById('txt-i-lead').textContent = L.iLead;
+  document.getElementById('txt-i-fallback').textContent = L.iFallback;
+  document.getElementById('txt-s-title').textContent = L.sTitle;
+  document.getElementById('txt-s-lead').textContent = L.sLead;
+  document.getElementById('txt-f-title').textContent = L.fTitle;
+  document.getElementById('txt-f-lead').textContent = L.fLead;
+  document.getElementById('txt-f-download').textContent = L.fDownload;
+  document.getElementById('txt-f-manage').textContent = L.fManage;
+  const signEl = document.getElementById('signPad');
+  signEl.textContent = signedImproved ? L.signed : L.signTap;
+  if(flow==='improved' && step===2){ buildReview(); }
+  if(flow==='improved' && step===5){ buildFinalReceipt(); }
+}
+
+function screenIds(){ return flow==='before' ? beforeScreens : improvedScreens; }
+
+function setFlow(f){
+  flow = f;
+  document.getElementById('btnBefore').classList.toggle('active', f==='before');
+  document.getElementById('btnImproved').classList.toggle('active', f==='improved');
+  step = 0;
+  if(view==='console'){
+    document.getElementById('consoleImproved').style.display = flow==='improved' ? 'block' : 'none';
+    document.getElementById('consoleLegacy').style.display = flow==='before' ? 'block' : 'none';
+  }
+  render();
+}
+function setView(v){
+  view = v;
+  document.getElementById('btnPatient').classList.toggle('active', v==='patient');
+  document.getElementById('btnConsole').classList.toggle('active', v==='console');
+  document.getElementById('patientLayout').style.display = v==='patient' ? 'grid' : 'none';
+  document.getElementById('consoleView').style.display = v==='console' ? 'block' : 'none';
+  if(v==='console'){
+    document.getElementById('consoleImproved').style.display = flow==='improved' ? 'block' : 'none';
+    document.getElementById('consoleLegacy').style.display = flow==='before' ? 'block' : 'none';
+    renderConsoleLedger();
+  }
+  render();
+}
+
+function render(){
+  document.querySelectorAll('.before-screen, .improved-screen').forEach(function(s){ s.classList.remove('active'); });
+  const ids = screenIds();
+  const current = document.getElementById(ids[step]);
+  if(current) current.classList.add('active');
+
+  if(flow==='before'){
+    document.getElementById('beforeForm').style.display = beforeSubmitted ? 'none' : 'block';
+    document.getElementById('beforeConfirm').style.display = beforeSubmitted ? 'flex' : 'none';
+  } else {
+    applyLang();
+  }
+
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = '';
+  ids.forEach(function(id,i){
+    const d = document.createElement('span');
+    if(i===step) d.className='on';
+    dotsEl.appendChild(d);
+  });
+
+  const nav = document.getElementById('navRow');
+  nav.innerHTML = '';
+  const isLast = step === ids.length-1;
+  const L = I18N[lang];
+  if(step>0){
+    const back = document.createElement('button');
+    back.className='btn'; back.textContent = flow==='improved' ? L.btnBack : 'Back';
+    back.onclick = function(){ step--; render(); };
+    nav.appendChild(back);
+  }
+  const next = document.createElement('button');
+  next.className='btn primary';
+  if(flow==='before'){
+    next.textContent = beforeSubmitted ? 'Submitted' : 'Submit';
+    next.disabled = beforeSubmitted;
+  } else {
+    next.textContent = isLast ? L.btnFinish : L.btnContinue;
+  }
+
+  next.onclick = function(){
+    if(flow==='before'){
+      if(!document.getElementById('beforeAgree').checked || !signedBefore){
+        showToast('Please check the agreement box and tap to sign first.');
+        return;
+      }
+      beforeSubmitted = true;
+      pushLedger('Document signed (PDF stored)', true);
+      showToast('Form submitted. Filed to hospital record system manually by staff.');
+      render();
+      return;
+    }
+    if(step===0 && !noticeEventPushed){
+      pushLedger('Notice shown (v2.3, '+(lang==='en'?'English':'Hindi')+')', false);
+      noticeEventPushed = true;
+    }
+    if(step===1){ pushChoiceEvent(); }
+    if(step===3){ pushLedger('Identity verified via OTP · 1 attempt', false); }
+    if(step===4){
+      if(!signedImproved){ showToast('Please tap to sign first.'); return; }
+      pushLedger('Signature captured · artefact sealed · bound to notice v2.3', false);
+      pushLedger('EHR writeback attempted', false);
+      setTimeout(function(){ pushLedger('EHR writeback confirmed · state: COMPLETE', false); }, 400);
+    }
+    if(step===5){
+      showToast('Consent complete. This record is now visible in the compliance console.');
+      return;
+    }
+    if(!isLast){ step++; render(); }
+  };
+  nav.appendChild(next);
+
+  document.getElementById('annoContent').innerHTML = buildAnno();
+  updateMetricBar();
+}
+
+function buildAnno(){
+  const key = flow==='before' ? 0 : step+1;
+  const a = annotations[key];
+  return '<div class="anno-block"><div class="lbl">Decision made</div><p>'+a.d+'</p></div>'+
+  '<div class="anno-block"><div class="lbl">Reason</div><p>'+a.r+'</p></div>'+
+  '<div class="anno-block"><div class="lbl">Trade-off</div><p>'+a.t+'</p></div>';
+}
+
+function updateMetricBar(){
+  const bar = document.getElementById('metricBar');
+  if(flow==='improved' && step===1){
+    bar.innerHTML = '<span class="tag">Driver metric</span><span class="txt">This is the screen: separating required from optional purposes is what moves <b>informed-choice completion</b> — the leading driver of the audit-ready consent completion rate.</span>';
+  } else {
+    bar.innerHTML = '<span class="tag">North star</span><span class="txt">Moves <b>Audit-ready consent completion rate</b> — signed + evidence-complete + EHR-confirmed / all eligible sessions. Currently unset: no baseline exists until this flow is instrumented.</span>';
+  }
+}
+
+function setLang(l){
+  lang = l;
+  document.getElementById('chipEN').classList.toggle('on', l==='en');
+  document.getElementById('chipHI').classList.toggle('on', l==='hi');
+  applyLang();
+}
+function toggleOpt(btn, key){ btn.classList.toggle('on'); opt[key] = btn.classList.contains('on'); }
+function toggleLargeText(btn){
+  btn.classList.toggle('on');
+  document.getElementById('phoneFrame').classList.toggle('large-text', btn.classList.contains('on'));
+}
+
+function signBefore(){
+  signedBefore = true;
+  const el = document.getElementById('beforeSignPad');
+  el.classList.add('signed'); el.textContent = 'Signed';
+}
+function signPatient(){
+  signedImproved = true;
+  const el = document.getElementById('signPad');
+  el.classList.add('signed'); el.textContent = I18N[lang].signed;
+}
+function useFallback(){
+  pushLedger('Identity fallback requested · staff-assisted OTP resend', false);
+  showToast('Front desk notified. They will help verify your identity.');
+}
+function downloadCopy(){
+  showToast('Downloading consent_receipt_OPD-2026-091433.pdf ...');
+}
+function goManageConsent(){
+  showToast('Opening your consent choices...');
+  step = 1;
+  render();
+}
+
+function pushChoiceEvent(){
+  const tpaTxt = opt.tpa ? 'Accepted' : 'Declined';
+  const smsTxt = opt.sms ? 'Accepted' : 'Declined';
+  pushLedger('Purpose choices recorded: Treatment=Required-Accepted, TPA sharing='+tpaTxt+', Reminders='+smsTxt, false);
+}
+
+function buildReview(){
+  const L = I18N[lang];
+  const list = document.getElementById('reviewList');
+  list.innerHTML =
+    '<div class="receipt-item"><span>'+L.treatmentLabel+'</span><span class="status-yes">'+L.requiredAccepted+'</span></div>'+
+    '<div class="receipt-item"><span>'+L.tpaLabel+'</span><span class="'+(opt.tpa?'status-yes':'status-no')+'">'+(opt.tpa?L.accepted:L.declined)+'</span></div>'+
+    '<div class="receipt-item"><span>'+L.smsLabel+'</span><span class="'+(opt.sms?'status-yes':'status-no')+'">'+(opt.sms?L.accepted:L.declined)+'</span></div>';
+}
+function buildFinalReceipt(){
+  buildReview();
+  document.getElementById('finalReceipt').innerHTML = document.getElementById('reviewList').innerHTML;
+}
+
+function pushLedger(text, weak){
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  ledgerEvents.push({time:time, text:text, weak:weak});
+  renderLedger();
+}
+function renderLedger(){
+  const el = document.getElementById('ledgerList');
+  if(!ledgerEvents.length){ el.innerHTML = '<div class="ledger-empty">Nothing yet.</div>'; }
+  else {
+    el.innerHTML = ledgerEvents.map(function(ev){
+      return '<div class="ledger-item"><div class="ledger-dot '+(ev.weak?'weak':'')+'"></div>'+
+      '<div class="ledger-txt"><div class="t">'+ev.time+'</div><div class="d">'+ev.text+'</div></div></div>';
+    }).join('');
+  }
+  const note = document.getElementById('ledgerNote');
+  if(flow==='before'){
+    note.className='ledger-note weak';
+    note.textContent = 'This is all the Before flow ever records: a signed PDF. No purpose-level choice, no notice version, no identity method — nothing an audit could reconstruct beyond "someone signed something."';
+  } else {
+    note.className='ledger-note';
+    note.textContent = 'The patient never sees this list. It is what makes the compliance console possible — every step here becomes an append-only evidence event.';
+  }
+  renderConsoleLedger();
+}
+function renderConsoleLedger(){
+  const el = document.getElementById('consoleLedger');
+  if(!el) return;
+  if(!ledgerEvents.length){
+    el.innerHTML = '<div class="ledger-empty">No events yet — go to Patient view and step through the Improved flow first.</div>';
+    return;
+  }
+  el.innerHTML = ledgerEvents.map(function(ev){
+    return '<div class="ledger-item"><div class="ledger-dot"></div>'+
+    '<div class="ledger-txt"><div class="t">'+ev.time+'</div><div class="d">'+ev.text+'</div></div></div>';
+  }).join('');
+  const sealedEvent = ledgerEvents.find(function(e){ return e.text.indexOf('sealed') !== -1; });
+  document.getElementById('consoleSignedAt').textContent = sealedEvent ? sealedEvent.time : '—';
+  document.getElementById('consoleNoticeVer').textContent = 'v2.3 · ' + (lang==='en'?'English':'Hindi');
+  document.getElementById('tpaState').innerHTML = opt.tpa ? '<span class="pill complete">Accepted</span>' : '<span class="pill withdrawn">Declined</span>';
+  document.getElementById('smsState').innerHTML = smsWithdrawn ? '<span class="pill withdrawn">WITHDRAWN</span>' : (opt.sms ? '<span class="pill complete">Accepted</span>' : '<span class="pill withdrawn">Declined</span>');
+}
+
+function retryEHR(){
+  if(ehrRetried){ document.getElementById('retryLog').textContent = 'Already retried once — same idempotency key reused, no duplicate record created.'; return; }
+  ehrRetried = true;
+  document.getElementById('ehrAttempts').textContent = '2';
+  document.getElementById('retryLog').textContent = 'Retrying with same correlation ID...';
+  setTimeout(function(){
+    document.getElementById('ehrPill').innerHTML = '<span class="pill complete">COMPLETE</span>';
+    document.getElementById('retryLog').textContent = 'EHR confirmed on retry. State moved SIGNED_PENDING_EHR → COMPLETE. No duplicate record created.';
+    pushLedger('EHR delivery retried (idempotent) · confirmed · state: COMPLETE', false);
+  }, 600);
+}
+function withdrawSMS(){
+  if(!opt.sms){ document.getElementById('withdrawLog').textContent = 'This purpose was already declined at signing — nothing to withdraw.'; return; }
+  if(smsWithdrawn){ document.getElementById('withdrawLog').textContent = 'Already withdrawn.'; return; }
+  document.getElementById('withdrawLog').textContent = 'Withdrawal requested...';
+  pushLedger('Withdrawal requested: Appointment reminders', false);
+  setTimeout(function(){
+    smsWithdrawn = true;
+    renderConsoleLedger();
+    document.getElementById('withdrawLog').textContent = 'Downstream reminder system acknowledged. State: WITHDRAWN.';
+    pushLedger('Withdrawal confirmed downstream · state: WITHDRAWN', false);
+  }, 600);
+}
+
+render();
+</script>
+</body>
+</html>
