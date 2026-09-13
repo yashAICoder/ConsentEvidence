@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consent Evidence — A hospital consent case study</title>
+<style>
+  :root{
+    --paper:#f6f2e9;
+    --ink:#221f1a;
+    --ink-soft:#4a453d;
+    --rule:#dcd4c2;
+    --rust:#a3462c;
+    --rust-dark:#7d3520;
+    --forest:#2f4a3d;
+    --card:#fffdf8;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:Arial, Helvetica, "Liberation Sans", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .index-rail{
+    position:fixed; left:0; top:0; bottom:0; width:64px;
+    border-right:1px solid var(--rule);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:26px; z-index:50; background:var(--paper);
+  }
+  @media (max-width:900px){ .index-rail{display:none;} }
+  .index-rail a{
+    writing-mode:vertical-rl; text-orientation:mixed;
+    text-decoration:none; color:var(--ink-soft); font-size:11px; letter-spacing:1.5px;
+    text-transform:uppercase; padding:6px 0; border-left:2px solid transparent;
+    transition:color .2s, border-color .2s;
+  }
+  .index-rail a.on{ color:var(--rust); border-left-color:var(--rust); }
+  .wrap{ max-width:760px; margin:0 auto; padding:0 28px; }
+  @media (min-width:901px){ .wrap{ margin-left:104px; margin-right:auto; padding:0 40px 0 0; } }
+
+  header.masthead{ padding:56px 0 28px; border-bottom:1px solid var(--rule); }
+  .kicker{ font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--rust); font-weight:bold; margin-bottom:14px; }
+  h1.title{
+    font-family:Georgia, "Times New Roman", serif;
+    font-size:clamp(28px,4vw,40px); line-height:1.15; margin:0 0 16px; color:var(--ink);
+    font-weight:400;
+  }
+  h1.title em{ font-style:italic; color:var(--rust-dark); }
+  p.dek{ font-size:16px; line-height:1.6; color:var(--ink-soft); max-width:56ch; margin:0 0 26px; }
+  .meta-row{ display:flex; gap:22px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); }
+  .meta-row span strong{ color:var(--ink); }
+
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:26px; }
+  .cta{
+    display:inline-flex; align-items:center; gap:8px; padding:12px 20px;
+    border-radius:2px; text-decoration:none; font-size:14px; font-weight:bold;
+    border:1.5px solid var(--ink); transition:background .15s, color .15s;
+  }
+  .cta.solid{ background:var(--ink); color:var(--paper); }
+  .cta.solid:hover{ background:var(--rust-dark); border-color:var(--rust-dark); }
+  .cta.outline{ background:transparent; color:var(--ink); }
+  .cta.outline:hover{ background:var(--ink); color:var(--paper); }
+  .cta:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+
+  section{ padding:44px 0; border-bottom:1px solid var(--rule); }
+  section:last-of-type{ border-bottom:none; }
+  .sec-label{ font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:var(--rust); font-weight:bold; margin-bottom:10px; }
+  h2{ font-family:Georgia, serif; font-weight:400; font-size:24px; color:var(--ink); margin:0 0 18px; }
+  p{ font-size:15px; line-height:1.7; color:var(--ink-soft); margin:0 0 16px; max-width:64ch; }
+  p strong{ color:var(--ink); }
+
+  .thesis-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:22px; }
+  @media (max-width:700px){ .thesis-grid{ grid-template-columns:1fr; } }
+  .thesis-card{ background:var(--card); border:1px solid var(--rule); padding:18px; }
+  .thesis-card .num{ font-family:Georgia,serif; font-size:26px; color:var(--rust); margin-bottom:6px; }
+  .thesis-card h3{ font-size:14.5px; margin:0 0 8px; color:var(--ink); }
+  .thesis-card p{ font-size:13px; line-height:1.55; margin:0; }
+
+  .fail-list{ list-style:none; margin:18px 0 0; padding:0; }
+  .fail-list li{
+    display:flex; gap:12px; padding:10px 0; border-bottom:1px dashed var(--rule);
+    font-size:14px; color:var(--ink-soft); line-height:1.5;
+  }
+  .fail-list li::before{ content:"—"; color:var(--rust); flex-shrink:0; font-weight:bold; }
+
+  .deliverables{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:22px; }
+  @media (max-width:700px){ .deliverables{ grid-template-columns:1fr; } }
+  .deliv-card{
+    background:var(--card); border:1px solid var(--rule); padding:24px; display:flex; flex-direction:column; gap:12px;
+  }
+  .deliv-card .tag{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--forest); font-weight:bold; }
+  .deliv-card h3{ font-family:Georgia,serif; font-weight:400; font-size:19px; margin:0; color:var(--ink); }
+  .deliv-card p{ font-size:13.5px; line-height:1.6; margin:0; }
+  .deliv-card .link{
+    margin-top:auto; display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:bold;
+    color:var(--rust-dark); text-decoration:none; padding-top:8px; border-top:1px solid var(--rule);
+  }
+  .deliv-card .link:hover{ text-decoration:underline; }
+
+  table.dec{ width:100%; border-collapse:collapse; margin-top:8px; }
+  table.dec th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--rust); padding:8px 10px; border-bottom:2px solid var(--ink); }
+  table.dec td{ font-size:13.5px; color:var(--ink-soft); padding:10px 10px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.55; }
+  table.dec tr:hover td{ background:var(--card); }
+
+  .metric-block{ background:var(--forest); color:#eef2ee; padding:26px 28px; margin-top:20px; }
+  .metric-block .label{ font-size:11px; letter-spacing:2px; text-transform:uppercase; opacity:.8; margin-bottom:8px; }
+  .metric-block .value{ font-family:Georgia,serif; font-size:20px; line-height:1.4; margin-bottom:10px; }
+  .metric-block .foot{ font-size:12.5px; opacity:.85; line-height:1.6; }
+
+  footer.about{ padding:48px 0 80px; }
+  .about-grid{ display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .about-text{ flex:1; min-width:240px; }
+  .links-list{ display:flex; flex-direction:column; gap:8px; }
+  .links-list a{ color:var(--rust-dark); text-decoration:none; font-size:14px; font-weight:bold; }
+  .links-list a:hover{ text-decoration:underline; }
+  .disclaimer{ font-size:12px; color:var(--ink-soft); margin-top:24px; padding-top:18px; border-top:1px solid var(--rule); line-height:1.6; max-width:64ch; }
+</style>
+</head>
+<body>
+
+<nav class="index-rail" id="indexRail">
+  <a href="#problem" data-target="problem">Problem</a>
+  <a href="#approach" data-target="approach">Approach</a>
+  <a href="#work" data-target="work">The work</a>
+  <a href="#decisions" data-target="decisions">Decisions</a>
+  <a href="#about" data-target="about">About</a>
+</nav>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">Product case study</div>
+    <h1 class="title">Consent isn't a signature.<br><em>It's a claim you have to defend later.</em></h1>
+    <p class="dek">A redesign of hospital patient consent: separating what a patient needs to understand from what a compliance officer needs to prove, backed by one evidence record instead of one PDF.</p>
+    <div class="meta-row">
+      <span><strong>Scope:</strong> Product requirements, interaction design, working prototype</span>
+      <span><strong>Grounded in:</strong> DPDP Act &amp; Rules, ABDM, HIPAA, Indian medical record law</span>
+    </div>
+    <div class="cta-row">
+      <a class="cta solid" href="Consent-Evidence-PRD.pdf" target="_blank" rel="noopener">Read the PRD (PDF)</a>
+      <a class="cta outline" href="consent-evidence-prototype-v4.html" target="_blank" rel="noopener">Open the interactive prototype</a>
+    </div>
+  </header>
+
+  <section id="problem">
+    <div class="sec-label">01 — The problem</div>
+    <h2>A signed PDF is not the same thing as informed consent.</h2>
+    <p>Most hospital consent flows work the same way: one long form covering treatment, insurance sharing, and marketing contact, one signature, one PDF filed into the record. That proves a document exists. It does not prove much else.</p>
+    <ul class="fail-list">
+      <li>Which language and version the patient actually read</li>
+      <li>Whether the patient understood treatment was separate from data sharing</li>
+      <li>What identity check was used, and by whom, if a representative signed</li>
+      <li>Whether the signed file ever reached the correct chart in the hospital's records system</li>
+      <li>Whether a later "please stop contacting me" request actually stopped anything</li>
+    </ul>
+    <p>Under India's DPDP Act, consent has to be specific, informed, and as easy to withdraw as it was to give. A single bundled signature cannot demonstrate any of that after the fact, which means the hospital is exposed exactly when it needs the record most: during an audit or a complaint.</p>
+  </section>
+
+  <section id="approach">
+    <div class="sec-label">02 — The approach</div>
+    <h2>Split the interface, not the truth.</h2>
+    <p>One consent record, two views. The patient sees a short, plain-language flow. Compliance staff see the full evidentiary chain behind the same signature. A consent only counts as complete when three separate things are true.</p>
+    <div class="thesis-grid">
+      <div class="thesis-card">
+        <div class="num">01</div>
+        <h3>Choice</h3>
+        <p>The patient saw purpose-specific information and made an affirmative, unbundled decision.</p>
+      </div>
+      <div class="thesis-card">
+        <div class="num">02</div>
+        <h3>Signature</h3>
+        <p>The right person signed, through an identity check that matches the risk of that consent type.</p>
+      </div>
+      <div class="thesis-card">
+        <div class="num">03</div>
+        <h3>Evidence delivery</h3>
+        <p>The signed record reached the correct chart, or a resolvable exception was raised instead of a silent gap.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="sec-label">03 — The deliverables</div>
+    <h2>Two documents, one underlying decision.</h2>
+    <p>The PRD carries the reasoning: personas, flows, a locked metric definition, functional requirements, acceptance criteria, a state model, and an explicit rule for the one legal conflict most teams leave vague — what happens when a patient's right to be forgotten runs into a doctor's legal duty to keep records.</p>
+    <div class="deliverables">
+      <div class="deliv-card">
+        <div class="tag">Document</div>
+        <h3>The PRD</h3>
+        <p>Problem framing, the three-part definition of "complete" consent, 18 functional requirements, 12 acceptance criteria, a full state model, and the retention-conflict resolution table.</p>
+        <a class="link" href="Consent-Evidence-PRD.pdf" target="_blank" rel="noopener">Open PDF &rarr;</a>
+      </div>
+      <div class="deliv-card">
+        <div class="tag">Prototype</div>
+        <h3>The interactive demo</h3>
+        <p>Click through the old bundled form next to the new purpose-separated flow. Switch to the compliance console to see the same session as an evidence record, including an EHR retry and a withdrawal.</p>
+        <a class="link" href="consent-evidence-prototype-v4.html" target="_blank" rel="noopener">Open prototype &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="sec-label">04 — Decisions worth defending</div>
+    <h2>Where the trade-offs actually are.</h2>
+    <table class="dec">
+      <tr><th>Decision</th><th>Cost</th><th>Why it's still right</th></tr>
+      <tr>
+        <td>Hide hashes, certificates, and internal IDs from the patient screen</td>
+        <td>Patients can't self-inspect the technical evidence</td>
+        <td>None of that helps a patient decide anything; it only helps an auditor later</td>
+      </tr>
+      <tr>
+        <td>Separate a "pending EHR" state from "complete"</td>
+        <td>Creates an operational exception queue staff must manage</td>
+        <td>A signature that never reached the chart is not a filed consent, and pretending otherwise is the actual risk</td>
+      </tr>
+      <tr>
+        <td>Decline record deletion when medical retention law requires keeping it</td>
+        <td>The patient's erasure request is partly refused</td>
+        <td>Withdrawal changes future processing, not past evidence; the record of the withdrawal is itself the audit defence</td>
+      </tr>
+      <tr>
+        <td>Start the pilot with one consent type, one site, adult self-signing only</td>
+        <td>Guardian, interpreter, and emergency flows stay unsolved at launch</td>
+        <td>A pilot that tries to prove five hard workflows at once proves none of them convincingly</td>
+      </tr>
+    </table>
+
+    <div class="metric-block">
+      <div class="label">The one metric this moves</div>
+      <div class="value">Audit-ready consent completion rate</div>
+      <div class="foot">Signed, evidence-complete, and EHR-confirmed sessions divided by all eligible sessions started. No baseline is claimed here — the PRD is explicit that this number only exists after an instrumented pilot, not before.</div>
+    </div>
+  </section>
+
+  <footer class="about" id="about">
+    <div class="sec-label">05 — About this project</div>
+    <div class="about-grid">
+      <div class="about-text">
+        <p>Built as an independent case study applying product thinking to a real regulatory problem in Indian healthcare: DPDP consent requirements, ABDM's consent-artefact model, and the everyday reality of hospital intake. Every regulatory claim is footnoted in the PRD against its primary source. No product metrics or completion-rate figures are invented anywhere in this work.</p>
+      </div>
+      <div class="links-list">
+        <a href="Consent-Evidence-PRD.pdf" target="_blank" rel="noopener">PRD (PDF) &rarr;</a>
+        <a href="consent-evidence-prototype-v4.html" target="_blank" rel="noopener">Interactive prototype &rarr;</a>
+      </div>
+    </div>
+    <div class="disclaimer">Yash Bhatt. This is independent design and product work produced for portfolio purposes. It does not represent internal information from, or an engagement with, any specific company.</div>
+  </footer>
+
+</div>
+
+<script>
+  const sections = ['problem','approach','work','decisions','about'].map(id => document.getElementById(id));
+  const links = document.querySelectorAll('.index-rail a');
+  const setActive = (id) => {
+    links.forEach(a => a.classList.toggle('on', a.dataset.target === id));
+  };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+  sections.forEach(s => s && io.observe(s));
+</script>
+
+</body>
+</html>
